@@ -1,0 +1,12 @@
+The Provable Data Possession (PDP) Library
+
+Copyright (c) 2008, Zachary N J Peterson <zachary@jhu.edu>
+All rights reserved.
+
+Description
+
+Notes
+
+Be sure to include OpenSSL_add_all_algorithms() to any application you write using the PDP library -- OpenSSL functions
+will fail with nondescript error messages otherwise.
+

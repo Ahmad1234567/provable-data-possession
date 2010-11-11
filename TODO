@@ -1,0 +1,9 @@
+
+
+Endian safe
+
+write an autoconf script
+
+S3/EC2 interface
+
+W_i needs to be unique for every block of every file; fix this
