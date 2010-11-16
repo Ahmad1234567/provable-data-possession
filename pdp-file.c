@@ -237,8 +237,12 @@ int pdp_tag_file(char *filepath, size_t filepath_len, char *tagfilepath, size_t 
 	
 	/* Check to see if the tag file exists */
 	if( access(realtagfilepath, F_OK) == 0){
-		fprintf(stdout, "WARNING: %s already exists; do you want to overwite (y/N)?", realtagfilepath);
+		fprintf(stdout, "WARNING: %s already exists; do you want to overwrite (y/N)?", realtagfilepath);
+#ifdef DEBUG_MODE
+		yesorno = 'y';
+#else
 		scanf("%c", &yesorno);
+#endif
 		if(yesorno != 'y') goto exit;
 	}
 	
@@ -440,6 +444,7 @@ PDP_proof *pdp_prove_file(char *filepath, size_t filepath_len, char *tagfilepath
 		if(!proof) goto cleanup;
 		
 		destroy_pdp_tag(tag);
+		tag = NULL;
 	}
 
 	proof = pdp_generate_proof_final(key, challenge, proof);
