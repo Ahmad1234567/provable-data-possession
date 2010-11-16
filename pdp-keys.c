@@ -409,6 +409,7 @@ PDP_key *read_pdp_keypair(FILE *pri_key, FILE *pub_key){
 	size_t password_len = 1024;
 	char password[password_len];
 	unsigned char *key_v = NULL;
+	RSA *rsa = NULL;
 	
 	if(pri_key == NULL || pub_key == NULL) return NULL;
 
@@ -430,7 +431,7 @@ PDP_key *read_pdp_keypair(FILE *pri_key, FILE *pub_key){
 #ifndef	DEBUG_MODE
 	if(!read_password("Enter passphrase:", (unsigned char *)password, password_len)) goto cleanup;
 #else
-	strcpy(password, "test");
+	strcpy(password, "z");
 #endif
 
 	pkey = PEM_read_PrivateKey(pri_key, NULL, NULL, password);
@@ -460,7 +461,9 @@ PDP_key *read_pdp_keypair(FILE *pri_key, FILE *pub_key){
 	memcpy(key->v, key_v, PRF_KEY_SIZE);
 		
 	/* Read in the public key */
-	if(!PEM_read_RSAPublicKey(pub_key, NULL, NULL, NULL)) goto cleanup;
+	rsa = PEM_read_RSAPublicKey(pub_key, NULL, NULL, NULL);
+	if(!rsa) goto cleanup;
+	RSA_free(rsa);
 	
 	/* Retreive the generator */
 	fread(&gen_size, sizeof(size_t), 1, pub_key);
@@ -474,7 +477,8 @@ PDP_key *read_pdp_keypair(FILE *pri_key, FILE *pub_key){
 	if(pkey) EVP_PKEY_free(pkey);
 	if(dk) sfree(dk, PRP_KEY_SIZE);
 	if(salt) sfree(salt, PRF_KEY_SIZE);
-	if(enc_v) sfree(enc_v, PRF_KEY_SIZE);
+	if(enc_v) sfree(enc_v, 40);
+	if(key_v) sfree(key_v, PRF_KEY_SIZE);
 	if(gen) sfree(gen, gen_size);
 	
 	return key;
@@ -488,7 +492,8 @@ cleanup:
 	if(pkey) EVP_PKEY_free(pkey);
 	if(dk) sfree(dk, PRP_KEY_SIZE);
 	if(salt) sfree(salt, PRF_KEY_SIZE);
-	if(enc_v) sfree(enc_v, PRF_KEY_SIZE);
+	if(enc_v) sfree(enc_v, 40);
+	if(key_v) sfree(key_v, PRF_KEY_SIZE);
 	if(gen) sfree(gen, gen_size);
 	
 	return NULL;
@@ -717,6 +722,7 @@ PDP_key *pdp_get_keypair(){
 	}else if(!pub_key && pri_key){
 		/*TODO: Reconstruct public key from private, if it exists */
 		fprintf(stderr, "ERROR: PDP public key is missing.\n");
+		goto cleanup;
 
 		/* Get user passphrase */
 		//if(!readpassphrase("Enter passphrase:", password1, _PASSWORD_LEN + 1, RPP_ECHO_OFF)) goto cleanup;
