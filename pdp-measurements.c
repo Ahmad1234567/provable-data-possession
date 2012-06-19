@@ -1,7 +1,7 @@
 /* 
-* pdp-core.c
+* pdp-measurements.c
 *
-* Copyright (c) 2008, Zachary N J Peterson <zachary@jhu.edu>
+* Copyright (c) 2011, Zachary N J Peterson <zachary@jhu.edu>
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -38,29 +38,11 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-
-/*struct PDP_parameters_struct{
-	
-	unsigned int prf_key_size; p
-	unsigned int prp_key_size; r
-	unsigned int rsa_key_size; N
-	unsigned int rsa_e; e
-	
-	unsigned int block_size; b
-	unsigned int num_challenge; c
-}
-*/
-
 static struct option longopts[] = {
-	{"keygen", no_argument, NULL, 'k'}, //TODO optional argument for key location
+	{"gen-key", no_argument, NULL, 'g'}, //TODO optional argument for key location
 	{"tag", no_argument, NULL, 't'},
 	{"verify", no_argument, NULL, 'v'},
-	{"prf_key_size", no_argument, NULL, 'p'},
-	{"prp_key_size", no_argument, NULL, 'r'},
-	{"rsa_key_size", no_argument, NULL, 'N'},
-	{"rsa_e", no_argument, NULL, 'e'},
-	{"blocksize", no_argument, NULL, 'b'},
-	{"numchallenge", no_argument, NULL, 'c'},
+	{"blocksize", no_argument, NULL 'b'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -75,7 +57,7 @@ void usage(){
 	fprintf(stdout, "Commands:\n\n");
 	fprintf(stdout, "-t, --tag [file]\t\t tag a file\n");
 	fprintf(stdout, "-v, --verify [file]\t\t verify data possession\n\n");
-	fprintf(stdout, "-k, --keygen\t\t\t generate a new PDP key pair\n\n");
+	fprintf(stdout, "-k, --gen-key\t\t\t generate a new PDP key pair\n\n");
 	
 }
 
@@ -87,6 +69,8 @@ int main(int argc, char **argv){
 	int opt = -1;
 	unsigned int numfileblocks = 0;
 	struct stat st;
+	size_t pdp_blocksize = 0;
+	PDP_tag *tag = NULL;
 #ifdef USE_S3
 	char tagfilepath[MAXPATHLEN];
 #endif
@@ -98,8 +82,11 @@ int main(int argc, char **argv){
 
 	OpenSSL_add_all_algorithms();
 
-	while((opt = getopt_long(argc, argv, "kt:v:s:", longopts, NULL)) != -1){
+	while((opt = getopt_long(argc, argv, "b:kt:v:s:z:", longopts, NULL)) != -1){
 		switch(opt){
+			case 'b':
+				pdp_blocksize = atoi(optarg);
+				break;
 			case 'k':
 				key = pdp_create_new_keypair();
 				if(key) destroy_pdp_key(key);
@@ -109,15 +96,23 @@ int main(int argc, char **argv){
 					fprintf(stderr, "ERROR: File name is too long.\n");
 					break;
 				}
-				//fprintf(stdout, "Tagging %s...\n", optarg);
+				fprintf(stdout, "Tagging %s...\n", optarg);
 #ifdef DEBUG_MODE
-				//gettimeofday(&tv1, NULL);
+				gettimeofday(&tv1, NULL);
+				
 #endif
+				if(pdp_blocksize == 0)
+
+
+
+				tag = pdp_tag_block(PDP_key *key, unsigned char *block, pdp_blocksize, unsigned int index);
+					
+
 				if(pdp_tag_file(optarg, strlen(optarg), NULL, 0))
-					//fprintf(stdout, "Done!\n");
+					fprintf(stdout, "Done!\n");
 #ifdef DEBUG_MODE
-				//gettimeofday(&tv2, NULL);
-				//printf("%lf\n", (double)( (double)(double)(((double)tv2.tv_sec) + (double)((double)tv2.tv_usec/1000000)) - (double)((double)((double)tv1.tv_sec) + (double)((double)tv1.tv_usec/1000000)) ) );
+				gettimeofday(&tv2, NULL);
+				printf("%lf\n", (double)( (double)(double)(((double)tv2.tv_sec) + (double)((double)tv2.tv_usec/1000000)) - (double)((double)((double)tv1.tv_sec) + (double)((double)tv1.tv_usec/1000000)) ) );
 
 #endif
 				break;
@@ -247,6 +242,7 @@ int main(int argc, char **argv){
 #endif
 */
 			default:
+				printf("usage!\n");
 				usage();
 				break;
 		}

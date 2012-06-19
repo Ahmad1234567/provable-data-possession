@@ -35,9 +35,15 @@
 #include <sys/param.h>
 
 
+#define S3_BUCKET_NAME "znjp"
+#define S3_ACCESS_KEY "AKIAJVTSBM6DGDFVV7EQ"
+#define S3_SECRET_ACCESS_KEY "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" 
+
+/*
 #define S3_BUCKET_NAME ""
 #define S3_ACCESS_KEY ""
 #define S3_SECRET_ACCESS_KEY "" 
+*/
 
 
 struct buffer_pointer{
@@ -295,7 +301,7 @@ PDP_proof *pdp_s3_prove_file(char *filepath, size_t filepath_len, char *tagfilep
 	}
 
 	/* Get the tag file from S3 */
-	if(!pdp_s3_get_file(realtagfilepath, tagfilepath_len)) goto cleanup;
+	//if(!pdp_s3_get_file(realtagfilepath, tagfilepath_len)) goto cleanup;
 
 	/* Open the tag file for reading */
 	tagfile = fopen(realtagfilepath, "r");
@@ -312,20 +318,21 @@ PDP_proof *pdp_s3_prove_file(char *filepath, size_t filepath_len, char *tagfilep
 		memset(buf, 0, PDP_BLOCKSIZE);
 		
 		/* Get block at indices[j] from S3 */
-		if(!pdp_s3_get_block(filepath, filepath_len, buf, PDP_BLOCKSIZE, indices[j])) goto cleanup;
+		if(!pdp_s3_get_block(filepath, filepath_len, buf, PDP_BLOCKSIZE, indices[j])){ fprintf(stderr, "Error reading block %d from S3.\n", indices[j]); goto cleanup; }
 		
 		/* Read tag for data block at indices[j] */
 		tag = read_pdp_tag(tagfile, indices[j]);
-		if(!tag) goto cleanup;
+		if(!tag){ fprintf(stderr, "Error reading tag.\n"); goto cleanup; }
 		
 		proof = pdp_generate_proof_update(key, challenge, tag, proof, buf, PDP_BLOCKSIZE, j);
-		if(!proof) goto cleanup;
-		
+		if(!proof){ fprintf(stderr, "Error generating proof.\n"); goto cleanup; }
+
 		destroy_pdp_tag(tag);
+		tag = NULL;
 	}
 
 	proof = pdp_generate_proof_final(key, challenge, proof);
-	if(!proof) goto cleanup;
+	if(!proof){ fprintf(stderr, "Error finalizing proof.\n"); goto cleanup; }
 	
 	if(indices) sfree(indices, (challenge->c * sizeof(unsigned int)));
 	/* Destroy the tag file */
@@ -342,8 +349,8 @@ cleanup:
 	if(tag) destroy_pdp_tag(tag);
 	if(tagfile){ 
 		ftruncate(fileno(tagfile), 0);
-		unlink(realtagfilepath);
-		fclose(tagfile);
+		//unlink(realtagfilepath);
+		//fclose(tagfile);
 	}
 	
 	return NULL;

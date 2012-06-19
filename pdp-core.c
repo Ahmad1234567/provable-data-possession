@@ -28,6 +28,7 @@
 
 #include "pdp.h"
 
+PDP_params params;
 
 /* pdp_tag_block: Client-side function that takes pdp-keys, a generator of QR_N, and block of data, its
  * size and its logical index and creates a pdp tag to be stored with it at the server.  Returns an allocated 
@@ -275,16 +276,15 @@ PDP_proof *pdp_generate_proof_final(PDP_key *key, PDP_challenge *challenge, PDP_
 	if(!proof) return NULL;
 	if(!key || !challenge || !proof->rho_temp || BN_is_zero(proof->rho_temp)) return NULL;
 	if(!key->rsa->n || !challenge->g_s) return NULL;
-	
 	if( ((ctx = BN_CTX_new()) == NULL)) return NULL;
-		
+
 	/* Compute g_s^ (M1 + M2 + ... + Mc) mod N*/
 	if(!BN_mod_exp(proof->rho_temp, challenge->g_s, proof->rho_temp, key->rsa->n, ctx)) goto cleanup;
-	
+
 	/* Compute H(g_s^(M1 + M2 + ... + Mc)) */
 	proof->rho = generate_H(proof->rho_temp, &(proof->rho_size));
 	if(!proof->rho) goto cleanup;
-	
+
 	if(ctx) BN_CTX_free(ctx);
 	
 	return proof;

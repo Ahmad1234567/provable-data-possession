@@ -113,10 +113,11 @@ PDP_tag *read_pdp_tag(FILE *tagfile, unsigned int index){
 	/*Read in Tim */
 	fread(&tim_size, sizeof(size_t), 1, tagfile);
 	if(ferror(tagfile)) goto cleanup;
-	if( ((tim = malloc(tim_size)) == NULL)) goto cleanup;
-	memset(tim, 0, tim_size);
-	fread(tim, tim_size, 1, tagfile);
+	if( ((tim = malloc((unsigned int)tim_size)) == NULL)) goto cleanup;
+	memset(tim, 0, (unsigned int)tim_size);
+	fread(tim, (unsigned int)tim_size, 1, tagfile);
 	if(ferror(tagfile)) goto cleanup;
+
 	if(!BN_bin2bn(tim, tim_size, tag->Tim)) goto cleanup;
 
 	/* read index */
@@ -126,9 +127,9 @@ PDP_tag *read_pdp_tag(FILE *tagfile, unsigned int index){
 	/* write index prf */
 	fread(&(tag->index_prf_size), sizeof(size_t), 1, tagfile);
 	if(ferror(tagfile)) goto cleanup;
-	if( ((tag->index_prf = malloc(tag->index_prf_size)) == NULL)) goto cleanup;
-	memset(tag->index_prf, 0, tag->index_prf_size);
-	fread(tag->index_prf, tag->index_prf_size, 1, tagfile);
+	if( ((tag->index_prf = malloc((unsigned int)tag->index_prf_size)) == NULL)) goto cleanup;
+	memset(tag->index_prf, 0, (unsigned int)tag->index_prf_size);
+	fread(tag->index_prf, (unsigned int)tag->index_prf_size, 1, tagfile);
 	if(ferror(tagfile)) goto cleanup;
 
 	if(tim) sfree(tim, tim_size);
@@ -237,10 +238,10 @@ int pdp_tag_file(char *filepath, size_t filepath_len, char *tagfilepath, size_t 
 	
 	/* Check to see if the tag file exists */
 	if( access(realtagfilepath, F_OK) == 0){
-		fprintf(stdout, "WARNING: %s already exists; do you want to overwrite (y/N)?", realtagfilepath);
 #ifdef DEBUG_MODE
 		yesorno = 'y';
 #else
+		fprintf(stdout, "WARNING: %s already exists; do you want to overwrite (y/N)?", realtagfilepath);
 		scanf("%c", &yesorno);
 #endif
 		if(yesorno != 'y') goto exit;
@@ -259,9 +260,8 @@ int pdp_tag_file(char *filepath, size_t filepath_len, char *tagfilepath, size_t 
 	/* For each block of the file, tag it and write the tag to disk */
 	
 #ifdef THREADING
-	if(stat(filepath, &st) < 0) return 0;
-	
 	/* Calculate the number pdp blocks in the file */
+	if(stat(filepath, &st) < 0) return 0;
 	numfileblocks = (st.st_size/PDP_BLOCKSIZE);
 	if(st.st_size%PDP_BLOCKSIZE) numfileblocks++;
 
@@ -303,6 +303,7 @@ int pdp_tag_file(char *filepath, size_t filepath_len, char *tagfilepath, size_t 
 		if(!tags[index]) goto cleanup;
 		if(!write_pdp_tag(tagfile, tags[index])) goto cleanup;
 		destroy_pdp_tag(tags[index]);
+		tags[index] = NULL;
 	}
 	sfree(tags, (sizeof(PDP_tag *) * numfileblocks));
 #else
@@ -321,6 +322,7 @@ int pdp_tag_file(char *filepath, size_t filepath_len, char *tagfilepath, size_t 
 		if(!write_pdp_tag(tagfile, tag)) goto cleanup;
 		index++;
 		destroy_pdp_tag(tag);
+		tag = NULL;
 	}while(!feof(file));	
 #endif
 
@@ -340,7 +342,10 @@ cleanup:
 	}
 
 	for(index = 0; index < numfileblocks; index++){
-		if(tags[index]) destroy_pdp_tag(tags[index]);
+		if(tags[index]){
+			destroy_pdp_tag(tags[index]);
+			tags[index] = NULL;
+		}
 	}
 	if(tags) sfree(tags, (sizeof(PDP_tag *) * numfileblocks));
 #endif

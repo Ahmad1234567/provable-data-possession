@@ -12,7 +12,7 @@
 *     * Redistributions in binary form must reproduce the above copyright
 *       notice, this list of conditions and the following disclaimer in the
 *       documentation and/or other materials provided with the distribution.
-*     * The name of the Zachary N J Peterson may be used to endorse or promote products
+*     * The name of Zachary N J Peterson may not be used to endorse or promote products
 *       derived from this software without specific prior written permission.
 *
 * THIS SOFTWARE IS PROVIDED BY ZACHARY N J PETERSON ``AS IS'' AND ANY
@@ -38,7 +38,7 @@
 #include <string.h>
 
 
-//#define DEBUG_MODE
+#define DEBUG_MODE
 
 /* Using safe primes is required if you want PDP to be provably secure.  
  * Key generation is slower as a side effect */
@@ -60,7 +60,7 @@
  * Processing is the bottleneck in tagging, so launching more than the number of
  * of cores won't achieve much, if any, speedup. */
 #ifdef THREADING
-#define NUM_THREADS 2
+#define NUM_THREADS 4
 #endif
 
 #define PRF_KEY_SIZE 20
@@ -68,10 +68,25 @@
 #define RSA_KEY_SIZE 1024
 #define RSA_E RSA_F4
 
-#define PDP_BLOCKSIZE 16384 /* 16Kbytes */
+#define PDP_BLOCKSIZE 4096 /* 4Kbytes */
 
-/* 460 blocks gives you 99% chance of detecting an error, 300 blocks givers you 95% chance*/
+/* 460 blocks gives you 99% chance of detecting an error, 300 blocks gives you 95% chance*/
 #define MAGIC_NUM_CHALLENGE_BLOCKS 460
+
+typedef struct PDP_parameters_struct PDP_params;
+
+struct PDP_parameters_struct{
+	
+	unsigned int prf_key_size;
+	unsigned int prp_key_size;
+	unsigned int rsa_key_size;
+	unsigned int rsa_e;
+	
+	unsigned int block_size;
+	unsigned int num_challenge;
+}
+
+extern PDP_params params;
 
 typedef BIGNUM PDP_generator;
 

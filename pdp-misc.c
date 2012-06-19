@@ -209,8 +209,8 @@ unsigned char *generate_prf_w(PDP_key *key, unsigned int index, size_t *prf_resu
 	
 	if(!key || !key->v || !prf_result_size) return NULL;
 	
-	if( ((prf_result = malloc(EVP_MAX_MD_SIZE)) == NULL)) goto cleanup;
-	memset(prf_result, 0, EVP_MAX_MD_SIZE);
+	if( ((prf_result = malloc(SHA_DIGEST_LENGTH)) == NULL)) goto cleanup;
+	memset(prf_result, 0, SHA_DIGEST_LENGTH);
 	
 	/* Perform the HMAC on the block index */
 	if(!HMAC(EVP_sha1(), key->v, PRF_KEY_SIZE, (unsigned char *)&index, sizeof(int), 
@@ -219,7 +219,7 @@ unsigned char *generate_prf_w(PDP_key *key, unsigned int index, size_t *prf_resu
 	return prf_result;
 	
 cleanup:
-	if(prf_result) sfree(prf_result, EVP_MAX_MD_SIZE);
+	if(prf_result) sfree(prf_result, SHA_DIGEST_LENGTH);
 	if(prf_result_size) *prf_result_size = 0;
 	
 	return NULL;
@@ -302,7 +302,7 @@ void destroy_pdp_generator(PDP_generator *g){
 
 /*
  * pick_pdp_generator: Finds a generator of the quadratic residues subgroup of Z*N.
- * Takes an pdp-key contain the RSA modulus N and returns a generator or NULL on failure..
+ * Takes an RSA modulus N and returns a generator or NULL on failure..
  */
 PDP_generator *pick_pdp_generator(BIGNUM *n){
 
@@ -350,7 +350,7 @@ PDP_generator *pick_pdp_generator(BIGNUM *n){
 	}
 
 	/* Square a to get a generator of the quadratic residues */
- 	if(!BN_sqr(g, a, ctx)) goto cleanup;
+ 	if(!BN_sqr(g, a, ctx)){ found_g = 0; goto cleanup; }
 
 cleanup:
 	if(ctx)	BN_CTX_free(ctx);
@@ -400,7 +400,6 @@ void destroy_pdp_challenge(PDP_challenge *challenge){
 	if(challenge->k1) sfree(challenge->k1, PRP_KEY_SIZE);
 	if(challenge->k2) sfree(challenge->k2, PRF_KEY_SIZE);
 	sfree(challenge, sizeof(PDP_challenge));
-	challenge = NULL;
 }
 
 PDP_challenge *generate_pdp_challenge(){
@@ -432,7 +431,6 @@ void destroy_pdp_tag(PDP_tag *tag){
 	if(tag->Tim) BN_clear_free(tag->Tim);
 	if(tag->index_prf && (tag->index_prf_size > 0)) sfree(tag->index_prf, tag->index_prf_size);	
 	sfree(tag, sizeof(PDP_tag));
-	tag = NULL;
 }
 
 PDP_tag *generate_pdp_tag(){
