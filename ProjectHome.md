@@ -1,0 +1,3 @@
+The provable data possession (PDP) library allows a client that has stored data at an untrusted server to verify that the server possesses the original data without retrieving it or storing a copy himself.  It accomplishes this by generating probabilistic proofs of possession by sampling random sets of blocks from the server.
+
+PDP uses homomorphic verifiable tags to minimize the amount of server computation, network traffic and block accesses while achieving a strong guarantee of data possession.
